@@ -7,20 +7,18 @@ from IPython import display
 
 path1 = [[0.0, 0.0], [0.011580143395790051, 0.6570165243709267], [0.07307496243411533, 1.2724369146199181], [0.3136756819515748, 1.7385910188236868], [0.8813313906933087, 1.9320292911046681], [1.6153051608455251, 1.9849785681091774], [2.391094224224885, 1.9878393390954208], [3.12721333474683, 1.938831731115573], [4, 3], [5, 4], [6, 8], [7, 20]]
 # path1 = [[0.0, 0.0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1, 1], [1.1, 1.1], [1.2, 1.2], [1.3, 1.3], [1.4, 1.4], [2, 2], [4, 6]]
-# helper functions
+
+
 def pt_to_pt_distance (pt1,pt2):
     distance = np.sqrt((pt2[0] - pt1[0])**2 + (pt2[1] - pt1[1])**2)
     return distance
 
-# returns -1 if num is negative, 1 otherwise
 def sgn (num):
   if num >= 0:
     return 1
   else:
     return -1
 
-# THIS IS DIFFERENT THAN BEFORE! initialize variables here
-# you can also change the Kp constant which is located at line 113
 currentPos = [0, 0]
 currentHeading = 330
 lastFoundIndex = 0
@@ -29,16 +27,8 @@ linearVel = 50
 
 # set this to true if you use rotations
 using_rotation = False
-
-# this determines how long (how many frames) the animation will run. 400 frames takes around 30 seconds.
 numOfFrames = 400
 
-# this function needs to return 3 things IN ORDER: goalPt, lastFoundIndex, turnVel
-# think about this function as a snapshot in a while loop
-# given all information about the robot's current state, what should be the goalPt, lastFoundIndex, and turnVel?
-# the LFindex takes in the value of lastFoundIndex as input. Looking at it now I can't remember why I have it.
-# it is this way because I don't want the global lastFoundIndex to get modified in this function, instead, this function returns the updated lastFoundIndex value 
-# this function will be feed into another function for creating animation
 def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) :
 
   # extract currentX and currentY
@@ -131,9 +121,7 @@ def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) 
   
   return goalPt, lastFoundIndex, turnVel
 
-# the code below is for animation
-# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# for the sake of my sanity
+
 pi = np.pi
 # animation
 fig = plt.figure()
@@ -146,7 +134,7 @@ connection_line = connection_lines[0]
 poses = plt.plot([], 'o', color='black', markersize=10)
 pose = poses[0]
 
-# Wapoint setup
+# Waypoint setup
 pathForGraph = np.array(path1)
 plt.plot(pathForGraph[:, 0], pathForGraph[:, 1], '--', color='grey')
 plt.plot(pathForGraph[:, 0], pathForGraph[:, 1], 'o', color='black', markersize=5)
@@ -171,16 +159,12 @@ def pure_pursuit_animation (frame) :
   # call pure_pursuit_step to get info
   goalPt, lastFoundIndex, turnVel = pure_pursuit_step (path1, currentPos, currentHeading, lookAheadDis, lastFoundIndex)
 
-  # model: 200rpm drive with 18" width
-  #               rpm   /s  circ   feet
   maxLinVelfeet = 200 / 60 * pi * 4 / 12
-  #               rpm   /s  center angle   deg
   maxTurnVelDeg = 200 / 60 * pi * 4 / 9 * (180 / pi)
 
   print("lin vel " + str(maxLinVelfeet))
   print("max turn vel " + str(maxTurnVelDeg))
 
-  # update x and y, but x and y stays constant here
   stepDis = linearVel/100 * maxLinVelfeet * dt/1000
   print("Step distance: " + str(stepDis))
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
@@ -194,15 +178,12 @@ def pure_pursuit_animation (frame) :
     currentHeading = currentHeading%360
     if currentHeading < 0: currentHeading += 360
 
-  # rest of the animation code
   xs.append(currentPos[0])
   ys.append(currentPos[1])
 
   pose.set_data ((currentPos[0], currentPos[1]))
   trajectory_line.set_data (xs, ys)
 
-  # if (lastFoundIndex == 23):
-    # anim.event_source.stop()
 
 anim = animation.FuncAnimation (fig, pure_pursuit_animation, frames = numOfFrames, interval = 50)
 plt.show()

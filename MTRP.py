@@ -38,7 +38,7 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   if absTargetAngle < 0:
     absTargetAngle += 360
 
-  # naming convention consistent with the book
+
   D = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
   alpha = find_min_angle(absTargetAngle, targetHeading)
   errorTerm1 = find_min_angle(absTargetAngle, currentHeading)
@@ -53,7 +53,7 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   else:
     turnError = errorTerm1 + beta
 
-  # apply proportional control to find linear and turn velocities
+  
   linearVel = Kp_lin * D
   turnVel = Kp_turn * turnError
 
@@ -62,7 +62,7 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   if D < tolerance:
     closeToTarget = True
   if closeToTarget:
-    # apply equation 3.13 from Wheeled Mobile Robotics: From Fundamentals Towards Autonomous Systems
+    # equation 3.13 
     linearVel =  Kp_lin * D * np.sign(math.cos(turnError *pi/180))  # in pct
     # when close enough to the target, overwrite the turn error output from intermediate direction calculations to prevent oscillations
     turnError = find_min_angle(targetHeading, currentHeading)
@@ -144,10 +144,10 @@ def robot_animation (frame) :
   #if np.abs(rightSideVel) > 100 : np.sign(rightSideVel)*rightSideVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
   if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
-    print(f"Left Side at X: {currentPos[0]} Drivetrain velocity: {np.abs(leftSideVel)}")
+    print(f"Current X: {currentPos[0]}")
+    print(f"Current Y: {currentPos[1]}")
+    print(f"Left Side Drivetrain velocity: {np.abs(leftSideVel)}")
     print(f"Right Side Drivetrain velocity: {np.abs(rightSideVel)}")
-  else:
-    print(currentPos[0])
 
   # print(f"Linear Velocity: {linearVel}")
   # print(f"Turn Velocity: {turnVel}")
