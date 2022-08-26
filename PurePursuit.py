@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 import matplotlib.animation as animation
 from IPython import display
-# hi
+# hi lol
 
 path1 = [[0.0, 0.0], [0.011580143395790051, 0.6570165243709267], [0.07307496243411533, 1.2724369146199181], [0.3136756819515748, 1.7385910188236868], [0.8813313906933087, 1.9320292911046681], [1.6153051608455251, 1.9849785681091774], [2.391094224224885, 1.9878393390954208], [3.12721333474683, 1.938831731115573], [4, 3], [5, 4], [6, 8], [7, 20]]
 # path1 = [[0.0, 0.0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9], [1, 1], [1.1, 1.1], [1.2, 1.2], [1.3, 1.3], [1.4, 1.4], [2, 2], [4, 6]]
@@ -137,7 +137,7 @@ def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) 
 pi = np.pi
 # animation
 fig = plt.figure()
-trajectory_lines = plt.plot([], '-', color='orange', linewidth = 4)
+trajectory_lines = plt.plot([], '-', color='blue', linewidth = 4)
 trajectory_line = trajectory_lines[0]
 heading_lines = plt.plot([], '-', color='red')
 heading_line = heading_lines[0]
@@ -170,7 +170,6 @@ def pure_pursuit_animation (frame) :
 
   # call pure_pursuit_step to get info
   goalPt, lastFoundIndex, turnVel = pure_pursuit_step (path1, currentPos, currentHeading, lookAheadDis, lastFoundIndex)
-  print(lastFoundIndex)
 
   # model: 200rpm drive with 18" width
   #               rpm   /s  circ   feet
@@ -178,8 +177,12 @@ def pure_pursuit_animation (frame) :
   #               rpm   /s  center angle   deg
   maxTurnVelDeg = 200 / 60 * pi * 4 / 9 * (180 / pi)
 
+  print("lin vel " + str(maxLinVelfeet))
+  print("max turn vel " + str(maxTurnVelDeg))
+
   # update x and y, but x and y stays constant here
   stepDis = linearVel/100 * maxLinVelfeet * dt/1000
+  print("Step distance: " + str(stepDis))
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
   currentPos[1] += stepDis * np.sin(currentHeading*pi/180)
 
