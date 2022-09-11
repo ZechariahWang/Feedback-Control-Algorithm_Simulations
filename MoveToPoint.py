@@ -7,12 +7,12 @@ from IPython import display
 
 # Constants
 initX, initY = 0, 0
-targetX, targetY = 1, 20
+targetX, targetY = 0, 8
 currentHeading = 135
 targetHeading = 90
 tolerance = 0.1
-Kp_lin = 30
-Kp_turn = 5
+Kp_lin = 20
+Kp_turn = 3
 
 numOfFrames = 120
 dt = 50   # ms, interval between frames
@@ -26,6 +26,12 @@ def find_min_angle (targetHeading, currentHeading):
     turnAngle = -1 * np.sign(turnAngle) * (360 - abs(turnAngle))
   return turnAngle
 
+def sgn (num):
+  if num >= 0:
+    return 1
+  else:
+    return -1
+
 
 def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn, r = 1, turnMax = 100, linMax = 70):
   currentX, currentY = currentPos[0], currentPos[1]
@@ -33,53 +39,22 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   
   # the angle between the line connecting the robot's current position to the target point and the x axis
   absTargetAngle = math.atan2 ((targetY-currentY), (targetX-currentX)) *180/pi
+  distance = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+
 
   # keep absTargetAngle between 0 and 360
   if absTargetAngle < 0:
     absTargetAngle += 360
-
-
-  D = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2) # distance to target
-  alpha = find_min_angle(absTargetAngle, targetHeading)
-  errorTerm1 = find_min_angle(absTargetAngle, currentHeading)
-
-  beta = math.atan(r/D) *180 / pi
-
-  if alpha < 0:
-    beta = -beta
-
-  if abs(alpha) < abs(beta):
-    turnError = errorTerm1 + alpha
-  else:
-    turnError = errorTerm1 + beta
-
   
-  linearVel = Kp_lin * D
+  turnError = absTargetAngle - currentHeading
+  if (turnError > 180 or turnError < -180):
+    turnerror = -1 * sgn(turnerror) * (360 - abs(turnerror))
+
+
+
   turnVel = Kp_turn * turnError
+  linearVel = Kp_lin * distance
 
-  # when close enough to the target
-  closeToTarget = False
-  if D < tolerance:
-    closeToTarget = True
-  if closeToTarget:
-    # equation 3.13 
-    linearVel =  Kp_lin * D * np.sign(math.cos(turnError *pi/180))  # in pct
-    # when close enough to the target, overwrite the turn error output from intermediate direction calculations to prevent oscillations
-    turnError = find_min_angle(targetHeading, currentHeading)
-    turnVel = Kp_turn * math.atan(math.tan(turnError *pi/180)) *180/pi
-
-  # cap the velocities
-  if np.abs(linearVel) > linMax:
-    linearVel = np.sign(linearVel) * linMax
-  if np.abs(turnVel) > turnMax:
-    turnVel = np.sign(turnVel) * turnMax
-
-  # prioritize turning
-  #if linearVel > (100 - np.abs(turnVel)):
-    #linearVel = 100 - np.abs(turnVel)
-  # # don't prioritize turning
-  if linearVel > 100:
-    linearVel = 100
 
   return linearVel, turnVel
 
@@ -140,8 +115,6 @@ def robot_animation (frame) :
 
   leftSideVel = linearVel - turnVel
   rightSideVel = linearVel + turnVel
-  #if np.abs(leftSideVel) > 100 : np.sign(leftSideVel)*leftSideVel
-  #if np.abs(rightSideVel) > 100 : np.sign(rightSideVel)*rightSideVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
   if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
     print(f"Current X: {currentPos[0]}")
@@ -149,8 +122,6 @@ def robot_animation (frame) :
     print(f"Left Side Drivetrain velocity: {(leftSideVel)}")
     print(f"Right Side Drivetrain velocity: {(rightSideVel)}")
 
-  # print(f"Linear Velocity: {linearVel}")
-  # print(f"Turn Velocity: {turnVel}")
 
   # update x and y
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
@@ -175,11 +146,3 @@ def robot_animation (frame) :
 
 anim = animation.FuncAnimation (fig, robot_animation, frames = numOfFrames, interval = dt)
 plt.show()
-
-
-
-  # model: 200rpm drive with 18" width
-  #               rpm   /s  circ   feet
-  # maxLinVelfeet = 200 / 60 * pi*4 / 12
-  #               rpm   /s  center angle   deg
-  # maxTurnVelDeg = 200 / 60 * pi*4 / 9 *180/pi
