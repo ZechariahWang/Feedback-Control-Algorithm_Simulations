@@ -25,17 +25,14 @@ lastFoundIndex = 0
 lookAheadDis = 0.4
 linearVel = 50
 
-# set this to true if you use rotations
 using_rotation = False
 numOfFrames = 400
 
 def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) :
 
-  # extract currentX and currentY
   currentX = currentPos[0]
   currentY = currentPos[1]
 
-  # use for loop to search intersections
   lastFoundIndex = LFindex
   intersectFound = False
   startingIndex = lastFoundIndex
@@ -66,64 +63,45 @@ def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) 
       maxX = max(path[i][0], path[i+1][0])
       maxY = max(path[i][1], path[i+1][1])
 
-      # if one or both of the solutions are in range
       if ((minX <= sol_pt1[0] <= maxX) and (minY <= sol_pt1[1] <= maxY)) or ((minX <= sol_pt2[0] <= maxX) and (minY <= sol_pt2[1] <= maxY)):
 
         foundIntersection = True
-
-        # if both solutions are in range, check which one is better
         if ((minX <= sol_pt1[0] <= maxX) and (minY <= sol_pt1[1] <= maxY)) and ((minX <= sol_pt2[0] <= maxX) and (minY <= sol_pt2[1] <= maxY)):
-          # make the decision by compare the distance between the intersections and the next point in path
           if pt_to_pt_distance(sol_pt1, path[i+1]) < pt_to_pt_distance(sol_pt2, path[i+1]):
             goalPt = sol_pt1
           else:
             goalPt = sol_pt2
-        
-        # if not both solutions are in range, take the one that's in range
+
         else:
-          # if solution pt1 is in range, set that as goal point
           if (minX <= sol_pt1[0] <= maxX) and (minY <= sol_pt1[1] <= maxY):
             goalPt = sol_pt1
           else:
             goalPt = sol_pt2
-          
-        # only exit loop if the solution pt found is closer to the next pt in path than the current pos
+
         if pt_to_pt_distance (goalPt, path[i+1]) < pt_to_pt_distance ([currentX, currentY], path[i+1]):
-          # update lastFoundIndex and exit
           lastFoundIndex = i
           break
         else:
-          # in case for some reason the robot cannot find intersection in the next path segment, but we also don't want it to go backward
-          lastFoundIndex = i+1
-        
-      # if no solutions are in range
+          lastFoundIndex = i + 1
       else:
         foundIntersection = False
-        # no new intersection found, potentially deviated from the path
-        # follow path[lastFoundIndex]
         goalPt = [path[lastFoundIndex][0], path[lastFoundIndex][1]]
 
-  # obtained goal point, now compute turn vel
-  # initialize proportional controller constant
-  Kp = 3
 
-  # calculate absTargetAngle with the atan2 function
+  Kp = 3
   absTargetAngle = math.atan2 (goalPt[1]-currentPos[1], goalPt[0]-currentPos[0]) *180/pi
   if absTargetAngle < 0: absTargetAngle += 360
 
-  # compute turn error by finding the minimum angle
   turnError = absTargetAngle - currentHeading
   if turnError > 180 or turnError < -180 :
     turnError = -1 * sgn(turnError) * (360 - abs(turnError))
   
-  # apply proportional controller
   turnVel = Kp * turnError
   
   return goalPt, lastFoundIndex, turnVel
 
 
 pi = np.pi
-# animation
 fig = plt.figure()
 trajectory_lines = plt.plot([], '-', color='blue', linewidth = 4)
 trajectory_line = trajectory_lines[0]
@@ -134,7 +112,6 @@ connection_line = connection_lines[0]
 poses = plt.plot([], 'o', color='black', markersize=10)
 pose = poses[0]
 
-# Waypoint setup
 pathForGraph = np.array(path1)
 plt.plot(pathForGraph[:, 0], pathForGraph[:, 1], '--', color='grey')
 plt.plot(pathForGraph[:, 0], pathForGraph[:, 1], 'o', color='black', markersize=5)
@@ -147,16 +124,13 @@ xs = [currentPos[0]]
 ys = [currentPos[1]]
 
 def pure_pursuit_animation (frame) :
-  # define globals
   global currentPos
   global currentHeading
   global lastFoundIndex
   global linearVel
 
-  # for the animation to loop
   if lastFoundIndex >= len(path1)-2 : lastFoundIndex = 0
 
-  # call pure_pursuit_step to get info
   goalPt, lastFoundIndex, turnVel = pure_pursuit_step (path1, currentPos, currentHeading, lookAheadDis, lastFoundIndex)
 
   maxLinVelfeet = 200 / 60 * pi * 4 / 12

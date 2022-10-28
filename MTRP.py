@@ -15,7 +15,7 @@ Kp_lin = 30
 Kp_turn = 5
 
 numOfFrames = 120
-dt = 50   # ms, interval between frames
+dt = 50 
 
 currentPos = [initX, initY]
 targetPos = [targetX, targetY]
@@ -31,15 +31,13 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   currentX, currentY = currentPos[0], currentPos[1]
   targetX, targetY = targetPos[0], targetPos[1]
   
-  # the angle between the line connecting the robot's current position to the target point and the x axis
   absTargetAngle = math.atan2 ((targetY-currentY), (targetX-currentX)) *180/pi
 
-  # keep absTargetAngle between 0 and 360
   if absTargetAngle < 0:
     absTargetAngle += 360
 
 
-  D = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2) # distance to target
+  D = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2) 
   alpha = find_min_angle(absTargetAngle, targetHeading)
   errorTerm1 = find_min_angle(absTargetAngle, currentHeading)
 
@@ -52,32 +50,24 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
     turnError = errorTerm1 + alpha
   else:
     turnError = errorTerm1 + beta
-
   
   linearVel = Kp_lin * D
   turnVel = Kp_turn * turnError
 
-  # when close enough to the target
   closeToTarget = False
   if D < tolerance:
     closeToTarget = True
   if closeToTarget:
     # equation 3.13 
-    linearVel =  Kp_lin * D * np.sign(math.cos(turnError *pi/180))  # in pct
-    # when close enough to the target, overwrite the turn error output from intermediate direction calculations to prevent oscillations
+    linearVel =  Kp_lin * D * np.sign(math.cos(turnError *pi/180))  
     turnError = find_min_angle(targetHeading, currentHeading)
     turnVel = Kp_turn * math.atan(math.tan(turnError *pi/180)) *180/pi
 
-  # cap the velocities
   if np.abs(linearVel) > linMax:
     linearVel = np.sign(linearVel) * linMax
   if np.abs(turnVel) > turnMax:
     turnVel = np.sign(turnVel) * turnMax
 
-  # prioritize turning
-  #if linearVel > (100 - np.abs(turnVel)):
-    #linearVel = 100 - np.abs(turnVel)
-  # # don't prioritize turning
   if linearVel > 100:
     linearVel = 100
 
@@ -92,7 +82,6 @@ heading_lines = plt.plot([], '-', color='red')
 heading_line = heading_lines[0]
 poses = plt.plot([], 'o', color='orange', markersize=10)
 pose = poses[0]
-# draw a rectangle
 rect_lines_1 = plt.plot([], '-', color='orange')
 rect_lines_2 = plt.plot([], '-', color='orange')
 rect_lines_3 = plt.plot([], '-', color='orange')
@@ -102,7 +91,6 @@ rect_line_2 = rect_lines_2[0]
 rect_line_3 = rect_lines_3[0]
 rect_line_4 = rect_lines_4[0]
 
-# Graph Setup
 plt.plot([initX, targetX], [initY, targetY], 'x',color='red',markersize=10)
 plt.axis("scaled")
 plt.xlim (min([initX, targetX])-5, max([initX, targetX])+5)
@@ -140,8 +128,6 @@ def robot_animation (frame) :
 
   leftSideVel = linearVel - turnVel
   rightSideVel = linearVel + turnVel
-  #if np.abs(leftSideVel) > 100 : np.sign(leftSideVel)*leftSideVel
-  #if np.abs(rightSideVel) > 100 : np.sign(rightSideVel)*rightSideVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
   if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
     print(f"Current X: {currentPos[0]}")
@@ -152,7 +138,6 @@ def robot_animation (frame) :
   # print(f"Linear Velocity: {linearVel}")
   # print(f"Turn Velocity: {turnVel}")
 
-  # update x and y
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
   currentPos[1] += stepDis * np.sin(currentHeading*pi/180)
 
@@ -162,11 +147,9 @@ def robot_animation (frame) :
   currentHeading = currentHeading%360
   if currentHeading < 0: currentHeading += 360
 
-  # rest of the animation code
   xs.append(currentPos[0])
   ys.append(currentPos[1])
 
-  # draw robot, heading line, pose, and trajectory
   draw_square(0.75, currentPos, currentHeading)
   heading_line.set_data ([currentPos[0], currentPos[0] + 0.75*np.cos(currentHeading/180*pi)], [currentPos[1], currentPos[1] + 0.75*np.sin(currentHeading/180*pi)])
   pose.set_data ((currentPos[0], currentPos[1]))

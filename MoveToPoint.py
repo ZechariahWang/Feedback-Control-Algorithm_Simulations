@@ -15,7 +15,7 @@ Kp_lin = 20
 Kp_turn = 3
 
 numOfFrames = 120
-dt = 50   # ms, interval between frames
+dt = 50 
 
 currentPos = [initX, initY]
 targetPos = [targetX, targetY]
@@ -67,7 +67,6 @@ heading_lines = plt.plot([], '-', color='red')
 heading_line = heading_lines[0]
 poses = plt.plot([], 'o', color='orange', markersize=10)
 pose = poses[0]
-# draw a rectangle
 rect_lines_1 = plt.plot([], '-', color='orange')
 rect_lines_2 = plt.plot([], '-', color='orange')
 rect_lines_3 = plt.plot([], '-', color='orange')
@@ -123,21 +122,16 @@ def robot_animation (frame) :
     print(f"Right Side Drivetrain velocity: {(rightSideVel)}")
 
 
-  # update x and y
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
   currentPos[1] += stepDis * np.sin(currentHeading*pi/180)
-
-  # update heading
   currentHeading += (rightSideVel - leftSideVel)/2/100 * maxTurnVelDeg * dt/1000
 
   currentHeading = currentHeading%360
   if currentHeading < 0: currentHeading += 360
 
-  # rest of the animation code
   xs.append(currentPos[0])
   ys.append(currentPos[1])
 
-  # draw robot, heading line, pose, and trajectory
   draw_square(0.75, currentPos, currentHeading)
   heading_line.set_data ([currentPos[0], currentPos[0] + 0.75*np.cos(currentHeading/180*pi)], [currentPos[1], currentPos[1] + 0.75*np.sin(currentHeading/180*pi)])
   pose.set_data ((currentPos[0], currentPos[1]))
