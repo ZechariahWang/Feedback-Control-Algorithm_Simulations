@@ -7,10 +7,10 @@ from IPython import display
 
 # Constants
 initX, initY = 0, 0
-targetX, targetY = 1, 20
+targetX, targetY = 10, 20
 currentHeading = 135
-targetHeading = 90
-tolerance = 0.1
+targetHeading = 0
+tolerance = 0.5
 Kp_lin = 30
 Kp_turn = 5
 
@@ -27,7 +27,7 @@ def find_min_angle (targetHeading, currentHeading):
   return turnAngle
 
 
-def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn, r = 1, turnMax = 100, linMax = 70):
+def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn, r = 10, turnMax = 100, linMax = 200):
   currentX, currentY = currentPos[0], currentPos[1]
   targetX, targetY = targetPos[0], targetPos[1]
   
@@ -35,8 +35,7 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
 
   if absTargetAngle < 0:
     absTargetAngle += 360
-
-
+    
   D = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2) 
   alpha = find_min_angle(absTargetAngle, targetHeading)
   errorTerm1 = find_min_angle(absTargetAngle, currentHeading)

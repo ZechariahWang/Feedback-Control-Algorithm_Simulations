@@ -7,11 +7,11 @@ from IPython import display
 
 # Constants
 initX, initY = 0, 0
-targetX, targetY = 0, 8
+targetX, targetY = 40, 40
 currentHeading = 135
 targetHeading = 90
 tolerance = 0.1
-Kp_lin = 20
+Kp_lin = 10
 Kp_turn = 3
 
 numOfFrames = 120
@@ -45,6 +45,8 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   # keep absTargetAngle between 0 and 360
   if absTargetAngle < 0:
     absTargetAngle += 360
+
+  print(f"abs target angle: {(absTargetAngle)}")
   
   turnError = absTargetAngle - currentHeading
   if (turnError > 180 or turnError < -180):
@@ -115,11 +117,11 @@ def robot_animation (frame) :
   leftSideVel = linearVel - turnVel
   rightSideVel = linearVel + turnVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
-  if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
-    print(f"Current X: {currentPos[0]}")
-    print(f"Current Y: {currentPos[1]}")
-    print(f"Left Side Drivetrain velocity: {(leftSideVel)}")
-    print(f"Right Side Drivetrain velocity: {(rightSideVel)}")
+  # if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
+  #   print(f"Current X: {currentPos[0]}")
+  #   print(f"Current Y: {currentPos[1]}")
+  #   print(f"Left Side Drivetrain velocity: {(leftSideVel)}")
+  #   print(f"Right Side Drivetrain velocity: {(rightSideVel)}")
 
 
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
