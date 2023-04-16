@@ -8,7 +8,7 @@ from IPython import display
 # Constants
 initX, initY = 0, 0
 targetX, targetY = 40, 40
-currentHeading = 135
+currentHeading = 0
 targetHeading = 90
 tolerance = 0.1
 Kp_lin = 10
@@ -46,7 +46,7 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   if absTargetAngle < 0:
     absTargetAngle += 360
 
-  print(f"abs target angle: {(absTargetAngle)}")
+  print(f"current angle: {(currentHeading)}")
   
   turnError = absTargetAngle - currentHeading
   if (turnError > 180 or turnError < -180):
