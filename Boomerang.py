@@ -6,11 +6,11 @@ import matplotlib.animation as animation
 from IPython import display
 
 initX, initY = 0, 0
-targetX, targetY = 5, 5
+targetX, targetY = 20, 20
 currentHeading = 0
-targetHeading = 90
+targetHeading = 270
 tolerance = 0.1
-Kp_lin = 30
+Kp_lin = 15
 Kp_turn = 6.5
 M_PI = 3.14159
 minError = 1
@@ -109,6 +109,40 @@ def boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_t
 
   return linear_speed, angular_speed
 
+def new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
+  currentX, currentY = currentPos[0], currentPos[1]
+  targetX, targetY = targetPos[0], targetPos[1]
+  noPose = targetHeading > 360
+  
+  if noPose:
+    carrot_point_x = targetX
+    carrot_point_y = targetY
+  else:
+    h = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+    at = targetHeading * M_PI / 180
+    carrot_point_x = targetX - h * (math.sin(at)) * 0.8
+    carrot_point_y = targetY - h * (math.cos(at)) * 0.8
+    print(f"carrot point x: {carrot_point_x}")
+    print(f"carrot point y: {carrot_point_y}")
+
+
+  print(f"current angle: {(currentHeading)}")
+  
+  absTargetAngle = math.atan2 ((carrot_point_y-currentY), (carrot_point_x-currentX)) *180/pi 
+  if absTargetAngle < 0:
+    absTargetAngle += 360
+  turnError = absTargetAngle - currentHeading
+  if (turnError > 180 or turnError < -180):
+    turnError = -1 * sgn(turnError) * (360 - abs(turnError))
+
+  linear_error = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+  angular_error = turnError
+
+  linear_speed = linear_error * Kp_lin
+  angular_speed = angular_error * Kp_turn
+
+  return linear_speed, angular_speed
+
 
 
 
@@ -154,7 +188,7 @@ def draw_square (length, center, orientation):
 def robot_animation (frame) :
   global currentPos, currentHeading, f
 
-  linearVel, turnVel = boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
+  linearVel, turnVel = new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
 
   if f < 20:
     linearVel, turnVel = 0, 0
