@@ -37,12 +37,9 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   currentX, currentY = currentPos[0], currentPos[1]
   targetX, targetY = targetPos[0], targetPos[1]
   
-  # the angle between the line connecting the robot's current position to the target point and the x axis
   absTargetAngle = math.atan2 ((targetY-currentY), (targetX-currentX)) *180/pi
   distance = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
 
-
-  # keep absTargetAngle between 0 and 360
   if absTargetAngle < 0:
     absTargetAngle += 360
 
@@ -52,14 +49,10 @@ def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_
   if (turnError > 180 or turnError < -180):
     turnError = -1 * sgn(turnError) * (360 - abs(turnError))
 
-
-
   turnVel = Kp_turn * turnError
   linearVel = Kp_lin * distance
 
-
   return linearVel, turnVel
-
 
 
 fig = plt.figure()

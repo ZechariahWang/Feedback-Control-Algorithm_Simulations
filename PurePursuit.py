@@ -29,16 +29,13 @@ using_rotation = False
 numOfFrames = 400
 
 def pure_pursuit_step (path, currentPos, currentHeading, lookAheadDis, LFindex) :
-
   currentX = currentPos[0]
   currentY = currentPos[1]
-
   lastFoundIndex = LFindex
   intersectFound = False
   startingIndex = lastFoundIndex
 
   for i in range (startingIndex, len(path)-1):
-
     x1 = path[i][0] - currentX
     y1 = path[i][1] - currentY
     x2 = path[i+1][0] - currentX

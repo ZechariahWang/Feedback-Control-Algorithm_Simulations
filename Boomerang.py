@@ -6,12 +6,12 @@ import matplotlib.animation as animation
 from IPython import display
 
 initX, initY = 0, 0
-targetX, targetY = 20, 20
+targetX, targetY = 5, 5
 currentHeading = 0
-targetHeading = 270
+targetHeading = 180
 tolerance = 0.1
-Kp_lin = 15
-Kp_turn = 6.5
+Kp_lin = 10
+Kp_turn = 10
 M_PI = 3.14159
 minError = 1
 canReverse = False
