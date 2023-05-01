@@ -5,17 +5,21 @@ import math
 import matplotlib.animation as animation
 from IPython import display
 
-# Constants
 initX, initY = 0, 0
-targetX, targetY = -20, -40
+targetX, targetY = 5, 5
 currentHeading = 0
 targetHeading = 90
 tolerance = 0.1
-Kp_lin = 50
-Kp_turn = 10
+Kp_lin = 30
+Kp_turn = 6.5
+M_PI = 3.14159
+minError = 1
+canReverse = False
 
 numOfFrames = 120
 dt = 50 
+
+noPose = False
 
 currentPos = [initX, initY]
 targetPos = [targetX, targetY]
@@ -31,34 +35,80 @@ def sgn (num):
     return 1
   else:
     return -1
+  
+def get_angular_error(point_x, point_y):
+  x = point_x
+  y = point_y
+  x -= currentPos[0]
+  y -= currentPos[1]
+  delta_theta = math.atan2(point_y, point_x) - (currentHeading * M_PI / 180)
+  while math.fabs(delta_theta) > M_PI:
+    delta_theta -= 2 * M_PI * delta_theta / math.fabs(delta_theta)
+  return delta_theta
+  # if delta_theta > M_PI:
+  #   delta_theta -= 2 * M_PI
+  # elif delta_theta < -M_PI:
+  #   delta_theta += 2 * M_PI
+  # return delta_theta
 
-
-def move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn, r = 1, turnMax = 100, linMax = 70):
+def boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
   currentX, currentY = currentPos[0], currentPos[1]
   targetX, targetY = targetPos[0], targetPos[1]
+  noPose = targetHeading > 360
   
-  # the angle between the line connecting the robot's current position to the target point and the x axis
-  absTargetAngle = math.atan2 ((targetY-currentY), (targetX-currentX)) *180/pi
-  distance = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+  if noPose:
+    carrot_point_x = targetX
+    carrot_point_y = targetY
+  else:
+    h = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+    at = targetHeading * M_PI / 180
+    carrot_point_x = targetX - h * (math.sin(at)) * 0.8
+    carrot_point_y = targetY - h * (math.cos(at)) * 0.8
+    print(f"carrot point x: {carrot_point_x}")
+    print(f"carrot point y: {carrot_point_y}")
+
+  linear_error = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
+  angular_error = get_angular_error(carrot_point_x, carrot_point_y)
+
+  linear_speed = linear_error * Kp_lin
+  angular_speed = angular_error * Kp_turn
+
+  if linear_error < minError:
+    canReverse = True
+    if noPose:
+      angular_speed = 0
+    else:
+      poseError = (targetHeading * M_PI / 180) - (currentHeading * M_PI / 180)
+      while (math.fabs(poseError) > M_PI):
+        poseError -= 2 * M_PI * poseError / math.fabs(poseError)
+        angular_speed = poseError * Kp_turn
+      linear_speed *= math.cos(angular_error)
+  else:
+    if math.fabs(angular_error) > (2 * M_PI) and canReverse:
+      angular_error = angular_error - (angular_error / math.fabs(angular_error)) * M_PI
+      linear_speed = -linear_speed
+
+    print("inside first if statemtn")
+    angular_speed = angular_error * Kp_turn
+
+  overturn = math.fabs(angular_speed) + math.fabs(linear_speed) - 100
+  if overturn > 0:
+    print("in overturn")
+    if linear_speed > 0:
+      linear_speed -= overturn
+    else:
+      linear_speed -= -overturn
+
+  print(f"lin error: {linear_error}")
+  print(f"angular error: {angular_error * 180 / M_PI}")
+  print(f"H: {h}")
+  print(f"Overturn: {overturn}")
 
 
-  # keep absTargetAngle between 0 and 360
-  if absTargetAngle < 0:
-    absTargetAngle += 360
-
-  print(f"current angle: {(currentHeading)}")
-  
-  turnError = absTargetAngle - currentHeading
-  if (turnError > 180 or turnError < -180):
-    turnError = -1 * sgn(turnError) * (360 - abs(turnError))
 
 
+  return linear_speed, angular_speed
 
-  turnVel = Kp_turn * turnError
-  linearVel = Kp_lin * distance
-
-
-  return linearVel, turnVel
 
 
 
@@ -104,7 +154,7 @@ def draw_square (length, center, orientation):
 def robot_animation (frame) :
   global currentPos, currentHeading, f
 
-  linearVel, turnVel = move_to_pose_step (currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
+  linearVel, turnVel = boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
 
   if f < 20:
     linearVel, turnVel = 0, 0
@@ -117,11 +167,6 @@ def robot_animation (frame) :
   leftSideVel = linearVel - turnVel
   rightSideVel = linearVel + turnVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
-  # if np.abs(leftSideVel) > 1 and np.abs(rightSideVel) > 1:
-  #   print(f"Current X: {currentPos[0]}")
-  #   print(f"Current Y: {currentPos[1]}")
-  #   print(f"Left Side Drivetrain velocity: {(leftSideVel)}")
-  #   print(f"Right Side Drivetrain velocity: {(rightSideVel)}")
 
 
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)

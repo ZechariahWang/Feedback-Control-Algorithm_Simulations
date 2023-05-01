@@ -7,12 +7,12 @@ from IPython import display
 
 # Constants
 initX, initY = 0, 0
-targetX, targetY = 10, 20
+targetX, targetY = 20, 20
 currentHeading = 135
 targetHeading = 0
 tolerance = 0.5
-Kp_lin = 30
-Kp_turn = 5
+Kp_lin = 10000
+Kp_turn = 10
 
 numOfFrames = 120
 dt = 50 

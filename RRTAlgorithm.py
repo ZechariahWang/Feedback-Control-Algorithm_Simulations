@@ -122,9 +122,9 @@ class RRTAlgorithm():
 
 grid = np.load('new_map.npy')
 start = np.array([100.0, 100.0])
-goal = np.array([1000.0, 700.0])
-numIterations = 2000
-stepSize = 50
+goal = np.array([1200.0, 800.0])
+numIterations = 3000
+stepSize = 100
 goalRegion = plt.Circle((goal[0], goal[1]), stepSize, color = 'b', fill = False)
 
 fig = plt.figure("RRT Algorithm")
@@ -159,3 +159,4 @@ for i in range(len(rrt.wayPoints) - 1):
     plt.plot([rrt.wayPoints[i][0], rrt.wayPoints[i + 1][0]], [rrt.wayPoints[i][1], rrt.wayPoints[i + 1][1]], 'ro', linestyle="--")
     plt.pause(0.10)
 plt.show()
+print(rrt.wayPoints)
