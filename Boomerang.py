@@ -9,8 +9,8 @@ import time
 initX, initY = 0, 0
 currentHeading = 90
 tolerance = 0.1
-Kp_lin = 20
-Kp_turn = 12
+Kp_lin = 15
+Kp_turn = 10
 M_PI = 3.14159
 canReverse = False
 
@@ -18,8 +18,8 @@ numOfFrames = 120
 dt = 50 
 noPose = False
 
-targetX, targetY = 5, -5
-targetHeading = 180
+targetX, targetY = -7, -8
+targetHeading = 360
 minError = 1
 
 currentPos = [initX, initY]
@@ -114,7 +114,6 @@ def angle_error(angle1, angle2, radians):
         error += max_val
     return error
 
-
 def turn_to_point(targetX, targetY):
   deltaX = targetX - currentPos[0]
   deltaY = targetY - currentPos[1]
@@ -124,40 +123,83 @@ def turn_to_point(targetX, targetY):
 
   return target_heading
 
-
-
 def new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
-  currentX, currentY = currentPos[0], currentPos[1]
-  targetX, targetY = targetPos[0], targetPos[1]
-  noPose = targetHeading > 360
-  
-  if noPose:
-    carrot_point_x = targetX
-    carrot_point_y = targetY
-  else:
-    h = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
-    at = targetHeading * M_PI / 180
-    carrot_point_x = targetX - h * (math.sin(at)) * 0.8
-    carrot_point_y = targetY - h * (math.cos(at)) * 0.8
-    print(f"carrot point x: {carrot_point_x}")
-    print(f"carrot point y: {carrot_point_y}")
+    currentX, currentY = currentPos[0], currentPos[1]
+    targetX, targetY = targetPos[0], targetPos[1]
+    noPose = targetHeading > 360
 
-  print(f"current angle: {(currentHeading)}")
-  
-  absTargetAngle = math.atan2 ((carrot_point_y-currentY), (carrot_point_x-currentX)) *180/pi 
-  if absTargetAngle < 0:
-    absTargetAngle += 360
-  turnError = absTargetAngle - currentHeading
-  if (turnError > 180 or turnError < -180):
-    turnError = -1 * sgn(turnError) * (360 - abs(turnError))
+    if noPose:
+        carrot_point_x = targetX
+        carrot_point_y = targetY
+    else:
+        h = math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2)
+        at = targetHeading * math.pi / 180
+        carrot_point_x = targetX - h * math.cos(at) * 0.8
+        carrot_point_y = targetY - h * math.sin(at) * 0.8
 
-  linear_error = math.sqrt((targetX-currentX)**2 + (targetY-currentY)**2)
-  angular_error = turnError
+    print(f"current angle: {currentHeading}")
+    print(f"target angle: {targetHeading}")
 
-  linear_speed = linear_error * Kp_lin
-  angular_speed = angular_error * Kp_turn
+    absTargetAngle = math.atan2(carrot_point_y - currentY, carrot_point_x - currentX) * 180 / math.pi
+    if absTargetAngle < 0:
+        absTargetAngle += 360
+    turnError = absTargetAngle - currentHeading
+    if turnError > 180 or turnError < -180:
+        turnError = -1 * math.copysign(360 - abs(turnError), turnError)
 
-  return linear_speed, angular_speed
+    print(f"current angle: {currentHeading}")
+    print(f"target angle: {targetHeading}")
+    print(f"abs target angle: {absTargetAngle}")
+
+    linear_error = math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2)
+    angular_error = turnError
+
+    linear_speed = linear_error * Kp_lin
+    angular_speed = angular_error * Kp_turn
+
+    return linear_speed, angular_speed
+
+def backwards_new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
+    targetHeading = targetHeading + 180
+    if targetHeading < 0:
+      targetHeading += 360
+    if targetHeading > 0:
+      targetHeading -= 360
+    currentX, currentY = currentPos[0], currentPos[1]
+    targetX, targetY = targetPos[0], targetPos[1]
+    noPose = targetHeading > 360
+
+    if noPose:
+        carrot_point_x = targetX
+        carrot_point_y = targetY
+    else:
+        h = math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2)
+        at = targetHeading * math.pi / 180
+        carrot_point_x = targetX - h * math.cos(at) * 0.8
+        carrot_point_y = targetY - h * math.sin(at) * 0.8
+
+    print(f"current angle: {currentHeading}")
+    print(f"target angle: {targetHeading}")
+
+    absTargetAngle = math.atan2(carrot_point_y - currentY, carrot_point_x - currentX) * 180 / math.pi
+    if absTargetAngle < 0:
+        absTargetAngle += 360
+    turnError = absTargetAngle - currentHeading
+    if turnError > 180 or turnError < -180:
+        turnError = -1 * math.copysign(360 - abs(turnError), turnError)
+
+    print(f"current angle: {currentHeading}")
+    print(f"target angle: {targetHeading}")
+    print(f"abs target angle: {absTargetAngle}")
+
+    linear_error = math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2)
+    angular_error = turnError
+
+    ang_error = angular_error - (angular_error / abs(angular_error)) * 180
+    linear_speed = -1 * linear_error * Kp_lin  # Multiply by -1 for reverse movement
+    angular_speed = ang_error * Kp_turn
+
+    return linear_speed, angular_speed
 
 fig = plt.figure()
 trajectory_lines = plt.plot([], '--', color='black')
@@ -183,6 +225,7 @@ plt.ylim (min([initY, targetY])-5, max([initY, targetY])+5)
 xs = [currentPos[0]]
 ys = [currentPos[1]]
 f = 0
+h = 0
 
 def draw_square (length, center, orientation):
   global rect_line_1, rect_line_2, rect_line_3, rect_line_4
@@ -197,10 +240,13 @@ def draw_square (length, center, orientation):
 
 
 def robot_animation (frame) :
-  global currentPos, currentHeading, f
+  global currentPos, currentHeading, f, h
   linearVel, turnVel = new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
   if f < 20:
     linearVel, turnVel = 0, 0
+
+  if h < 28:
+     linearVel = 0
 
   maxLinVelfeet = 200 / 60 * pi*4 / 12
   maxTurnVelDeg = 200 / 60 * pi*4 / 9 *180/pi
@@ -222,6 +268,7 @@ def robot_animation (frame) :
   pose.set_data ((currentPos[0], currentPos[1]))
   trajectory_line.set_data (xs, ys)
   f += 1
+  h += 1
 
 
 
@@ -254,7 +301,6 @@ def turn_robot_animation (frame) :
   trajectory_line.set_data (xs, ys)
   f += 1
 
-second_anim = animation.FuncAnimation(fig, turn_robot_animation, frames = numOfFrames, interval = dt)
-time.sleep(1)
-#anim = animation.FuncAnimation (fig, robot_animation, frames = numOfFrames, interval = dt)
+#second_anim = animation.FuncAnimation(fig, turn_robot_animation, frames = numOfFrames, interval = dt)
+anim = animation.FuncAnimation (fig, robot_animation, frames = numOfFrames, interval = dt)
 plt.show()
