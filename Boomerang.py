@@ -4,22 +4,23 @@ import matplotlib.pyplot as plt
 import math
 import matplotlib.animation as animation
 from IPython import display
+import time
 
 initX, initY = 0, 0
-targetX, targetY = 5, 5
-currentHeading = 0
-targetHeading = 180
+currentHeading = 90
 tolerance = 0.1
-Kp_lin = 10
-Kp_turn = 10
+Kp_lin = 20
+Kp_turn = 12
 M_PI = 3.14159
-minError = 1
 canReverse = False
 
 numOfFrames = 120
 dt = 50 
-
 noPose = False
+
+targetX, targetY = 5, -5
+targetHeading = 180
+minError = 1
 
 currentPos = [initX, initY]
 targetPos = [targetX, targetY]
@@ -45,11 +46,6 @@ def get_angular_error(point_x, point_y):
   while math.fabs(delta_theta) > M_PI:
     delta_theta -= 2 * M_PI * delta_theta / math.fabs(delta_theta)
   return delta_theta
-  # if delta_theta > M_PI:
-  #   delta_theta -= 2 * M_PI
-  # elif delta_theta < -M_PI:
-  #   delta_theta += 2 * M_PI
-  # return delta_theta
 
 def boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
   currentX, currentY = currentPos[0], currentPos[1]
@@ -104,10 +100,31 @@ def boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_t
   print(f"H: {h}")
   print(f"Overturn: {overturn}")
 
-
-
-
   return linear_speed, angular_speed
+
+def angle_error(angle1, angle2, radians):
+    max_val = 2 * math.pi if radians else 360
+    half = math.pi if radians else 180
+    angle1 = angle1 % max_val
+    angle2 = angle2 % max_val
+    error = angle1 - angle2
+    if error > half:
+        error -= max_val
+    elif error < -half:
+        error += max_val
+    return error
+
+
+def turn_to_point(targetX, targetY):
+  deltaX = targetX - currentPos[0]
+  deltaY = targetY - currentPos[1]
+
+  targetTheta = math.fmod((math.atan2(deltaY, deltaX) * 180 / M_PI), 360)
+  target_heading = angle_error(targetTheta, currentHeading, False) * 5
+
+  return target_heading
+
+
 
 def new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn):
   currentX, currentY = currentPos[0], currentPos[1]
@@ -125,7 +142,6 @@ def new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, 
     print(f"carrot point x: {carrot_point_x}")
     print(f"carrot point y: {carrot_point_y}")
 
-
   print(f"current angle: {(currentHeading)}")
   
   absTargetAngle = math.atan2 ((carrot_point_y-currentY), (carrot_point_x-currentX)) *180/pi 
@@ -142,9 +158,6 @@ def new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, 
   angular_speed = angular_error * Kp_turn
 
   return linear_speed, angular_speed
-
-
-
 
 fig = plt.figure()
 trajectory_lines = plt.plot([], '--', color='black')
@@ -167,10 +180,8 @@ plt.plot([initX, targetX], [initY, targetY], 'x',color='red',markersize=10)
 plt.axis("scaled")
 plt.xlim (min([initX, targetX])-5, max([initX, targetX])+5)
 plt.ylim (min([initY, targetY])-5, max([initY, targetY])+5)
-
 xs = [currentPos[0]]
 ys = [currentPos[1]]
-
 f = 0
 
 def draw_square (length, center, orientation):
@@ -187,22 +198,15 @@ def draw_square (length, center, orientation):
 
 def robot_animation (frame) :
   global currentPos, currentHeading, f
-
   linearVel, turnVel = new_boomerang(currentPos, currentHeading, targetPos, targetHeading, Kp_lin, Kp_turn)
-
   if f < 20:
     linearVel, turnVel = 0, 0
 
-
   maxLinVelfeet = 200 / 60 * pi*4 / 12
   maxTurnVelDeg = 200 / 60 * pi*4 / 9 *180/pi
-
-
   leftSideVel = linearVel - turnVel
   rightSideVel = linearVel + turnVel
   stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
-
-
   currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
   currentPos[1] += stepDis * np.sin(currentHeading*pi/180)
   currentHeading += (rightSideVel - leftSideVel)/2/100 * maxTurnVelDeg * dt/1000
@@ -219,5 +223,38 @@ def robot_animation (frame) :
   trajectory_line.set_data (xs, ys)
   f += 1
 
-anim = animation.FuncAnimation (fig, robot_animation, frames = numOfFrames, interval = dt)
+
+
+
+
+def turn_robot_animation (frame) :
+  global currentPos, currentHeading, f
+  turnVel = turn_to_point(targetX, targetY)
+  if f < 20:
+    turnVel = 0
+
+  maxLinVelfeet = 200 / 60 * pi*4 / 12
+  maxTurnVelDeg = 200 / 60 * pi*4 / 9 *180/pi
+  leftSideVel = -turnVel
+  rightSideVel = +turnVel
+  stepDis = (leftSideVel + rightSideVel)/100 * maxLinVelfeet * dt/1000
+  currentPos[0] += stepDis * np.cos(currentHeading*pi/180)
+  currentPos[1] += stepDis * np.sin(currentHeading*pi/180)
+  currentHeading += (rightSideVel - leftSideVel)/2/100 * maxTurnVelDeg * dt/1000
+
+  currentHeading = currentHeading%360
+  if currentHeading < 0: currentHeading += 360
+
+  xs.append(currentPos[0])
+  ys.append(currentPos[1])
+
+  draw_square(0.75, currentPos, currentHeading)
+  heading_line.set_data ([currentPos[0], currentPos[0] + 0.75*np.cos(currentHeading/180*pi)], [currentPos[1], currentPos[1] + 0.75*np.sin(currentHeading/180*pi)])
+  pose.set_data ((currentPos[0], currentPos[1]))
+  trajectory_line.set_data (xs, ys)
+  f += 1
+
+second_anim = animation.FuncAnimation(fig, turn_robot_animation, frames = numOfFrames, interval = dt)
+time.sleep(1)
+#anim = animation.FuncAnimation (fig, robot_animation, frames = numOfFrames, interval = dt)
 plt.show()
